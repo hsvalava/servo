@@ -36,6 +36,7 @@ use std::borrow::ToOwned;
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::old_io as io;
+use std::marker::PhantomData;
 use std::mem::replace;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, channel};
@@ -85,6 +86,8 @@ pub struct Constellation<LTF, STF> {
     pub time_profiler_chan: TimeProfilerChan,
 
     pub window_size: WindowSizeData,
+
+    phantom: PhantomData<(LTF, STF)>,
 }
 
 /// One frame in the hierarchy.
@@ -358,10 +361,11 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 pending_sizes: HashMap::new(),
                 time_profiler_chan: time_profiler_chan,
                 window_size: WindowSizeData {
-                    visible_viewport: opts::get().initial_window_size.as_f32() * ScaleFactor(1.0),
-                    initial_viewport: opts::get().initial_window_size.as_f32() * ScaleFactor(1.0),
-                    device_pixel_ratio: ScaleFactor(1.0),
+                    visible_viewport: opts::get().initial_window_size.as_f32() * ScaleFactor::new(1.0),
+                    initial_viewport: opts::get().initial_window_size.as_f32() * ScaleFactor::new(1.0),
+                    device_pixel_ratio: ScaleFactor::new(1.0),
                 },
+                phantom: PhantomData,
             };
             constellation.run();
         });
@@ -587,7 +591,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         let mut already_sent = HashSet::new();
 
         // Returns true if a child frame tree's subpage id matches the given subpage id
-        let subpage_eq = |&:child_frame_tree: & &mut ChildFrameTree| {
+        let subpage_eq = |child_frame_tree: & &mut ChildFrameTree| {
             child_frame_tree.frame_tree.pipeline.borrow().
                 subpage_id().expect("Constellation:
                 child frame does not have a subpage id. This should not be possible.")
@@ -656,7 +660,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                     let ScriptControlChan(ref script_chan) = pipeline.script_chan;
                     script_chan.send(ConstellationControlMsg::Resize(pipeline.id, WindowSizeData {
                         visible_viewport: rect.size,
-                        initial_viewport: rect.size * ScaleFactor(1.0),
+                        initial_viewport: rect.size * ScaleFactor::new(1.0),
                         device_pixel_ratio: device_pixel_ratio,
                     })).unwrap();
                     compositor_proxy.send(CompositorMsg::SetLayerRect(
