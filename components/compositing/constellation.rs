@@ -174,6 +174,7 @@ trait FrameTreeTraversal {
 impl FrameTreeTraversal for Rc<FrameTree> {
     fn contains(&self, id: PipelineId) -> bool {
         self.iter().any(|frame_tree| {
+            // FIXME(https://github.com/rust-lang/rust/issues/23338)
             let pipeline = frame_tree.pipeline.borrow();
             id == pipeline.id
         })
@@ -1032,6 +1033,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
     fn handle_evicted_frames(&mut self, evicted_frames: Vec<Rc<FrameTree>>) {
         for frame_tree in evicted_frames.into_iter() {
             if !self.navigation_context.contains({
+                // FIXME(https://github.com/rust-lang/rust/issues/23338)
                 let pipeline = frame_tree.pipeline.borrow();
                 pipeline.id
             }) {
