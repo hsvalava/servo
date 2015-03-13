@@ -373,7 +373,10 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
             let check_anchor = |&node: &JSRef<HTMLAnchorElement>| {
                 let elem: JSRef<Element> = ElementCast::from_ref(node);
                 elem.get_attribute(ns!(""), &atom!("name")).root().map_or(false, |attr| {
-                    attr.r().value().as_slice() == fragid.as_slice()
+                    // FIXME(https://github.com/rust-lang/rust/issues/23338)
+                    let attr = attr.r();
+                    let value = attr.value();
+                    value.as_slice() == fragid.as_slice()
                 })
             };
             let doc_node: JSRef<Node> = NodeCast::from_ref(self);
@@ -466,7 +469,10 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
     /// Sends this document's title to the compositor.
     fn send_title_to_compositor(self) {
         let window = self.window().root();
-        window.r().compositor().set_title(window.r().pipeline(), Some(self.Title()));
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let window = window.r();
+        let mut compositor = window.compositor();
+        compositor.set_title(window.pipeline(), Some(self.Title()));
     }
 
     fn dirty_all_nodes(self) {
@@ -845,12 +851,16 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
 
     // http://dom.spec.whatwg.org/#dom-document-characterset
     fn CharacterSet(self) -> DOMString {
-        self.encoding_name.borrow().clone()
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let encoding_name = self.encoding_name.borrow();
+        encoding_name.clone()
     }
 
     // http://dom.spec.whatwg.org/#dom-document-inputencoding
     fn InputEncoding(self) -> DOMString {
-        self.encoding_name.borrow().clone()
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let encoding_name = self.encoding_name.borrow();
+        encoding_name.clone()
     }
 
     // http://dom.spec.whatwg.org/#dom-document-content_type
@@ -895,7 +905,8 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
     // http://dom.spec.whatwg.org/#dom-nonelementparentnode-getelementbyid
     fn GetElementById(self, id: DOMString) -> Option<Temporary<Element>> {
         let id = Atom::from_slice(id.as_slice());
-        match self.idmap.borrow().get(&id) {
+        let idmap = self.idmap.borrow();
+        match idmap.get(&id) {
             None => None,
             Some(ref elements) => Some(Temporary::new((*elements)[0].clone())),
         }
@@ -1063,7 +1074,9 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
 
     // http://www.whatwg.org/html/#dom-document-lastmodified
     fn LastModified(self) -> DOMString {
-        match *self.last_modified.borrow() {
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let last_modified = self.last_modified.borrow();
+        match *last_modified {
             Some(ref t) => t.clone(),
             None => format!("{}", time::now().strftime("%m/%d/%Y %H:%M:%S").unwrap()),
         }
@@ -1220,7 +1233,10 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
                 None => return false,
             };
             element.get_attribute(ns!(""), &atom!("name")).root().map_or(false, |attr| {
-                attr.r().value().as_slice() == name.as_slice()
+                // FIXME(https://github.com/rust-lang/rust/issues/23338)
+                let attr = attr.r();
+                let value = attr.value();
+                value.as_slice() == name.as_slice()
             })
         })
     }
