@@ -173,7 +173,10 @@ trait FrameTreeTraversal {
 
 impl FrameTreeTraversal for Rc<FrameTree> {
     fn contains(&self, id: PipelineId) -> bool {
-        self.iter().any(|frame_tree| id == frame_tree.pipeline.borrow().id)
+        self.iter().any(|frame_tree| {
+            let pipeline = frame_tree.pipeline.borrow();
+            id == pipeline.id
+        })
     }
 
     /// Returns the frame tree whose key is id
@@ -1028,7 +1031,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
     fn handle_evicted_frames(&mut self, evicted_frames: Vec<Rc<FrameTree>>) {
         for frame_tree in evicted_frames.into_iter() {
-            if !self.navigation_context.contains(frame_tree.pipeline.borrow().id) {
+            if !self.navigation_context.contains({
+                let pipeline = frame_tree.pipeline.borrow();
+                pipeline.id
+            }) {
                 self.close_pipelines(frame_tree);
             } else {
                 let frames = frame_tree.children.borrow().iter()
