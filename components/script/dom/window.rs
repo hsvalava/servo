@@ -351,7 +351,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         Temporary::from_rooted(self)
     }
 
-    fn Self(self) -> Temporary<Window> {
+    fn Self_(self) -> Temporary<Window> {
         self.Window()
     }
 
