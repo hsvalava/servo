@@ -161,7 +161,7 @@ fn create_constellation(opts: opts::Opts,
     use std::env;
 
     // Create a Servo instance.
-    let resource_task = new_resource_task(opts.user_agent.clone());
+    let resource_task = new_resource_task(opts.user_agent.clone(), devtools_chan.clone());
 
     // If we are emitting an output file, then we need to block on
     // image load or we risk emitting an output file missing the
