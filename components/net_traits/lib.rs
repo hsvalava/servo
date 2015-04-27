@@ -17,11 +17,13 @@ extern crate profile;
 extern crate stb_image;
 extern crate url;
 extern crate util;
+extern crate msg;
 
 use hyper::header::{ContentType, Headers};
 use hyper::http::RawStatus;
 use hyper::method::Method;
 use hyper::mime::{Mime, Attr};
+use msg::constellation_msg::{PipelineId};
 use url::Url;
 
 use std::borrow::IntoCow;
@@ -51,10 +53,11 @@ pub struct LoadData {
     pub preserved_headers: Headers,
     pub data: Option<Vec<u8>>,
     pub cors: Option<ResourceCORSData>,
+    pub pipeline_id: Option<PipelineId>,
 }
 
 impl LoadData {
-    pub fn new(url: Url) -> LoadData {
+    pub fn new(url: Url, id: Option<PipelineId>) -> LoadData {
         LoadData {
             url: url,
             method: Method::Get,
@@ -62,6 +65,7 @@ impl LoadData {
             preserved_headers: Headers::new(),
             data: None,
             cors: None,
+            pipeline_id: id,
         }
     }
 }
@@ -230,7 +234,7 @@ pub enum ProgressMsg {
 pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
         -> Result<(Metadata, Vec<u8>), String> {
     let (start_chan, start_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url), LoadConsumer::Channel(start_chan))).unwrap();
+    resource_task.send(ControlMsg::Load(LoadData::new(url, None), LoadConsumer::Channel(start_chan))).unwrap();
     let response = start_port.recv().unwrap();
 
     let mut buf = vec!();
@@ -246,7 +250,7 @@ pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
 /// Load a URL asynchronously and iterate over chunks of bytes from the response.
 pub fn load_bytes_iter(resource_task: &ResourceTask, url: Url) -> (Metadata, ProgressMsgPortIterator) {
     let (input_chan, input_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url), LoadConsumer::Channel(input_chan))).unwrap();
+    resource_task.send(ControlMsg::Load(LoadData::new(url, None), LoadConsumer::Channel(input_chan))).unwrap();
 
     let response = input_port.recv().unwrap();
     let iter = ProgressMsgPortIterator { progress_port: response.progress_port };

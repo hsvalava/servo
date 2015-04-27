@@ -85,7 +85,7 @@ impl ImageCacheTaskClient for ImageCacheTask {
 
 pub fn load_image_data(url: Url, resource_task: ResourceTask, placeholder: &[u8]) -> Result<Vec<u8>, ()> {
     let (response_chan, response_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url.clone()), Channel(response_chan))).unwrap();
+    resource_task.send(ControlMsg::Load(LoadData::new(url.clone(), None), Channel(response_chan))).unwrap();
 
     let mut image_data = vec!();
 
